@@ -1,15 +1,35 @@
 class HiddenLayer {
-	int[] layer;
+	double[][] layer;
 	
-	public HiddenLayer(int[] layer) {
-		this.layer = layer;
+	public HiddenLayer(double[] input) {
+		this.layer = new double[1][input.length];
+		this.layer[0] = input;
+		this.layer = Main.transposeMatrix(this.layer);
 	}
 	
-	public getIndex(int index) {
-		return layer[index];
+	public int getSize() {
+		return layer.length;
+	}
+
+	public double[] get() {
+		return Main.transposeMatrix(layer)[0];
+	}
+
+	public double[][] getAll() {
+		return layer;
+	}
+
+	public void set(double[] newLayer) {
+		double[][] T = Main.transposeMatrix(layer);
+		T[0] = newLayer;
+		layer = Main.transposeMatrix(T);
+	}
+
+	public double getIndex(int index) {
+		return layer[index][0];
 	}
 	
-	public setIndex(int index, int value) {
-		layer[index] = value;
+	public void setIndex(int index, double value) {
+		layer[index][0] = value;
 	}
 }
