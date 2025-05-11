@@ -1,5 +1,5 @@
 class HiddenLayer {
-	double[][] layer;
+	private double[][] layer;
 	
 	public HiddenLayer(double[] input) {
 		this.layer = new double[1][input.length];

@@ -1,10 +1,12 @@
 class WeightLayer {
-	double[][] weights;
-	HiddenLayer last;
-	HiddenLayer next;
+	private double[][] weights;
+	private double[][] deltas;
+	private HiddenLayer last;
+	private HiddenLayer next;
 	
 	public WeightLayer(HiddenLayer last, HiddenLayer next) {
 		this.weights = new double[next.getSize()][last.getSize()];
+		this.deltas = new double[weights.length][weights[0].length];
 		this.last = last;
 		this.next = next;
 	}
@@ -30,7 +32,15 @@ class WeightLayer {
 	}
 	
 	public void setWeight(int input, int output, double value) {
-    	weights[input][output] = value;
+    	weights[output][input] = value;
+	}
+
+	public double[][] getDeltas() {
+		return deltas;
+	}
+
+	public void setDelta(int input, int output, double value) {
+		deltas[output][input] = value;
 	}
 
 	public void initializeWeights() {
@@ -50,8 +60,10 @@ class WeightLayer {
 	}
 
 	public void applyWeights() {
-		
-
-		this.next.set(Main.transposeMatrix(Main.multiplyMatrix(weights, last.getAll()))[0]);
+		double[] arr = Main.transposeMatrix(Main.multiplyMatrix(weights, last.getAll()))[0];
+		for (int i = 0; i < arr.length; i++) {
+			arr[i] = Main.activationFunc(arr[i]);
+		}
+		this.next.set(arr);
 	}
 }

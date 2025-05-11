@@ -1,48 +1,86 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 class Main {
 	public static void main(String[] args) {
-		System.out.println(activationFunc(-2.0));
-		System.out.println(activationFunc(-1.0));
-		System.out.println(activationFunc(0.0));
-		System.out.println(activationFunc(1.0));
-		System.out.println(activationFunc(2.0));
+		double eta = 0.1;
 
 		// inputs and outputs
-		int inputSize = 2, outputSize = 2;
-		double[] input = new double[inputSize];
-		input[0] = 1;
-		input[1] = 1;
-		double[] output = new double[outputSize];
+		File file = null;
+		Scanner scan = null;
+		String[] line = null;
+
+		try {
+			file = new File("trainingSet.txt");
+			scan = new Scanner(file);
+		} catch (Exception e) {
+			System.out.println("FIle not found");
+            e.printStackTrace();
+			return;
+		}
+
+		ArrayList<double[]> inputs = new ArrayList<double[]>();
+		ArrayList<double[]> targets = new ArrayList<double[]>();
+		ArrayList<double[]> outputs = new ArrayList<double[]>();
+
+		while (scan.hasNext()) {
+			line = scan.nextLine().split(" ");
+			double[] input = new double[line.length];
+			for (int i = 0; i < input.length; i++) input[i] = Double.parseDouble(line[i]);
+			inputs.add(input);
+
+			line = scan.nextLine().split(" ");
+			double[] target = new double[line.length];
+			for (int i = 0; i < target.length; i++) target[i] = Double.parseDouble(line[i]);
+			targets.add(target);
+
+			if (scan.hasNextLine()) scan.nextLine();
+		}
+
+		// System.out.println("inputs: ");
+		// for (int i = 0; i < inputs.size(); i++) System.out.println(Arrays.toString(inputs.get(i)));
+
+		// System.out.println("targets: ");
+		// for (int i = 0; i < targets.size(); i++) System.out.println(Arrays.toString(targets.get(i)));
+
+
+		double[] currInput = new double[inputs.get(0).length];
+		double[] currOutput = new double[targets.get(0).length];
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 2, hiddenSize = 3;
+		int hiddenCount = 5, hiddenSize = 3;
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
 		}
 
 		// creating weight layers
 		ArrayList<WeightLayer> weightLayers = new ArrayList<WeightLayer>();
-		weightLayers.add(new WeightLayer(new HiddenLayer(input), hiddenLayers.get(0)));
+		weightLayers.add(new WeightLayer(new HiddenLayer(currInput), hiddenLayers.get(0)));
 		for (int i = 0; i < hiddenCount - 1; i++) {
 			weightLayers.add(new WeightLayer(hiddenLayers.get(i), hiddenLayers.get(i + 1)));
 		}
-		weightLayers.add(new WeightLayer(hiddenLayers.get(hiddenLayers.size() - 1), new HiddenLayer(output)));
+		weightLayers.add(new WeightLayer(hiddenLayers.get(hiddenLayers.size() - 1), new HiddenLayer(currOutput)));
 
 		// randomizing initial weights
-		for (int i = 0; i < weightLayers.size(); i++) {
-			weightLayers.get(i).initializeWeights();
-		}
+		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initializeWeights();
 
 		// applies weights
-		for (int i = 0; i < weightLayers.size(); i++) {
-			weightLayers.get(i).applyWeights();
+		for (int i = 0; i < inputs.size(); i++) {
+			weightLayers.get(0).getLast().set(inputs.get(i));
+			for (int j = 0; j < weightLayers.size(); j++) {
+				weightLayers.get(j).applyWeights();
+			}
+			outputs.add(weightLayers.get(weightLayers.size() - 1).getNext().get());
+
+			System.out.printf("%-15s | %-45s | %-15s\n", Arrays.toString(inputs.get(i)), 
+				Arrays.toString(outputs.get(outputs.size() - 1)), Arrays.toString(targets.get(i)));
 		}
-		output = weightLayers.get(weightLayers.size() - 1).getNext().get();
 
-		//----------------------------------------------------
-
+		/*
 		System.out.println("weight layers: ");
 		for (int i = 0; i < weightLayers.size(); i++) {
 			double[][] temp = weightLayers.get(i).getWeights();
@@ -55,9 +93,7 @@ class Main {
 		for (int i = 0; i < hiddenLayers.size(); i++) {
 			System.out.println(Arrays.toString(hiddenLayers.get(i).get()));
 		}
-
-		System.out.println("output layer: ");
-		System.out.println(Arrays.toString(output));
+		*/
 	}
 	
 	public static double[][] multiplyMatrix(double[][] A, double[][] B) {
@@ -86,5 +122,9 @@ class Main {
 
 	public static double activationFunc(double num) {
 		return (1 / (1 + Math.exp(-num)));
+	}
+
+	public static void updateWeights(double eta) {
+		
 	}
 }
