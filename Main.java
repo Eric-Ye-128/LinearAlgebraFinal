@@ -66,7 +66,7 @@ class Main {
 		weightLayers.add(new WeightLayer(hiddenLayers.get(hiddenLayers.size() - 1), new HiddenLayer(currOutput)));
 
 		// randomizing initial weights
-		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initializeWeights();
+		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initialize();
 
 		// applies weights
 		for (int i = 0; i < inputs.size(); i++) {
@@ -96,6 +96,18 @@ class Main {
 		*/
 	}
 	
+	public static double[][] addMatrix(double[][] A, double[][] B) {
+		double[][] out = new double[A.length][A[0].length];
+
+		for (int row = 0; row < out.length; row++) {
+			for (int col = 0; col < out[0].length; col++) {
+				out[row][col] = A[row][col] + B[row][col];
+			}
+		}
+
+		return out;
+	}
+
 	public static double[][] multiplyMatrix(double[][] A, double[][] B) {
 		double[][] out = new double[A.length][B[0].length];
 
@@ -125,6 +137,15 @@ class Main {
 	}
 
 	public static void updateWeights(double eta) {
+		/*
+		delta_Weight_ij = -eta * output_i * delta_j
+
+		
+		*/
+	}
+
+	public static double loss(ArrayList<double[]> targets, ArrayList<double[]> outputs) {
+		double loss = 0.0;
 		
 	}
 }
