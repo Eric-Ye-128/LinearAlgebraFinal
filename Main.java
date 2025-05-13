@@ -147,5 +147,12 @@ class Main {
 	public static double loss(ArrayList<double[]> targets, ArrayList<double[]> outputs) {
 		double loss = 0.0;
 		
+		for (int i = 0; i < targets.size(); i++) {
+			double num = 0.0;
+			for (int j = 0; j < targets.get(i).length; j++) {
+				num += (targets.get(i)[j] - outputs.get(i)[j]) * (targets.get(i)[j] - outputs.get(i)[j]);
+			}
+			double error = Math.sqrt(num);
+		}
 	}
 }
