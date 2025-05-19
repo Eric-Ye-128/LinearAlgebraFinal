@@ -1,10 +1,12 @@
 class HiddenLayer {
 	private double[][] layer;
+	private double[][] preActivation;
 	
 	public HiddenLayer(double[] input) {
 		this.layer = new double[1][input.length];
 		this.layer[0] = input;
 		this.layer = Main.transposeMatrix(this.layer);
+		this.preActivation = new double[layer.length][layer[0].length];
 	}
 	
 	public int getSize() {
@@ -31,5 +33,9 @@ class HiddenLayer {
 	
 	public void setIndex(int index, double value) {
 		layer[index][0] = value;
+	}
+
+	public double[] getPreActivation() {
+		return Main.transposeMatrix(preActivation)[0];
 	}
 }

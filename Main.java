@@ -52,7 +52,7 @@ class Main {
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 5, hiddenSize = 3;
+		int hiddenCount = 1, hiddenSize = 3;
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
 		}
@@ -80,15 +80,22 @@ class Main {
 				Arrays.toString(outputs.get(outputs.size() - 1)), Arrays.toString(targets.get(i)));
 		}
 
-		/*
+
 		System.out.println("weight layers: ");
 		for (int i = 0; i < weightLayers.size(); i++) {
 			double[][] temp = weightLayers.get(i).getWeights();
 			
 			for (double[] row : temp) System.out.println(Arrays.toString(row));
 			System.out.println();
+
+			System.out.println(Arrays.toString(weightLayers.get(i).getBias()));
+			System.out.println();
 		}
 
+
+		System.out.println(loss(targets, outputs));
+
+		/*
 		System.out.println("hidden layers: ");
 		for (int i = 0; i < hiddenLayers.size(); i++) {
 			System.out.println(Arrays.toString(hiddenLayers.get(i).get()));
@@ -132,27 +139,40 @@ class Main {
 		return T;
 	}
 
-	public static double activationFunc(double num) {
-		return (1 / (1 + Math.exp(-num)));
+	public static double activationFunc(double x) {
+		return (1 / (1 + Math.exp(-x)));
 	}
 
-	public static void updateWeights(double eta) {
+	public static double activationFuncDerivative(double x) {
+		return Math.exp(-x) / Math.pow(1 + Math.exp(-x), 2);
+	}
+
+	public static void updateWeights(ArrayList<WeightLayer> weightLayers, double eta) {
 		/*
 		delta_Weight_ij = -eta * output_i * delta_j
 
 		
 		*/
+
+		for (int i = 0; i < weightLayers.size(); i++) {
+			
+		}
 	}
 
 	public static double loss(ArrayList<double[]> targets, ArrayList<double[]> outputs) {
-		double loss = 0.0;
+		double totalLoss = 0.0;
 		
 		for (int i = 0; i < targets.size(); i++) {
-			double num = 0.0;
+			double loss = 0.0;
 			for (int j = 0; j < targets.get(i).length; j++) {
-				num += (targets.get(i)[j] - outputs.get(i)[j]) * (targets.get(i)[j] - outputs.get(i)[j]);
+				loss += 0.5 * (targets.get(i)[j] - outputs.get(i)[j]) * (targets.get(i)[j] - outputs.get(i)[j]);
 			}
-			double error = Math.sqrt(num);
+
+			totalLoss += loss;
 		}
+
+		totalLoss /= targets.size();
+
+		return totalLoss;
 	}
 }
