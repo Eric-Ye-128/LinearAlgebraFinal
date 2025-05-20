@@ -38,4 +38,10 @@ class HiddenLayer {
 	public double[] getPreActivation() {
 		return Main.transposeMatrix(preActivation)[0];
 	}
+
+	public void setPreActivation(double[] preActivations) {
+		double[][] T = Main.transposeMatrix(preActivation);
+		T[0] = preActivations;
+		this.preActivation = Main.transposeMatrix(T);
+	}
 }

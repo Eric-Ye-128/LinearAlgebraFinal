@@ -147,15 +147,44 @@ class Main {
 		return Math.exp(-x) / Math.pow(1 + Math.exp(-x), 2);
 	}
 
-	public static void updateWeights(ArrayList<WeightLayer> weightLayers, double eta) {
-		/*
-		delta_Weight_ij = -eta * output_i * delta_j
+	public static void updateWeights(ArrayList<WeightLayer> weightLayers, ArrayList<double[]> targets, double eta) {
+		double[][][] deltaWeights = new double[weightLayers.size()][weightLayers.get(0).length][weightLayers.get(0)[0].length];
 
-		
-		*/
+		double[][] sigma = new double[weightLayers.get(0).getWeights().length][weightLayers.get(0).getWeights().length];
+		for (int i = 0; i < sigma.length; i++) {
+			sigma[i][i] = activationFuncDerivative(weightLayers.get(0).getNext().getPreActivation()[i]);
+		}
 
-		for (int i = 0; i < weightLayers.size(); i++) {
+		for (int n = 0; n < targets.size(); n++) {
+			double[][] cost = new double[weightLayers.get(0).getWeights().length][1];
+			for (int i = 0; i < cost.length; i++) {
+				cost[i][0] = weightLayers.get(0).getNext().getIndex(i) - targets.get(n)[i];
+			}
+
+			double[][] temp = multiplyMatrix(sigma, cost);
+			for (row = 0; row < deltaWeights[0].length; row++) {
+				for (col = 0; col < deltaWeights[0][0].length; col++) {
+					deltaWeights[deltaWeights.length - 1][row][col] += temp[row][col];
+				}
+			}
+		}
+
+		for (int col = 0; col < deltaWeights[0][0].length; col++) {
+			for (int row = 0; row < deltaWeights[0].length; row++) {
+				deltaWeights[deltaWeights.length - 1][row][col] *= weightLayers.get(weightLayers.size() - 1).getLast().getIndex(col);
+			}
+		}
+
+		for (int i = weightLayers.size() - 2; i >= 0; i++) {
 			
+		}
+
+		for (int i = 0; i < deltaWeights.length; i++) {
+			for (int row = 0; row < deltaWeights[0].length; row++) {
+				for (int col = 0; col < deltaWeights[0][0].length; col++) {
+					deltaWeights[i][row][col] /= targets.size();
+				}
+			}
 		}
 	}
 
