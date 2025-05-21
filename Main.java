@@ -148,7 +148,7 @@ class Main {
 	}
 
 	public static void updateWeights(ArrayList<WeightLayer> weightLayers, ArrayList<double[]> targets, double eta) {
-		double[][][] deltaWeights = new double[weightLayers.size()][weightLayers.get(0).getNext().getSize()][1];
+		double[][][] deltas = new double[weightLayers.size()][weightLayers.get(0).getNext().getSize()][1];
 		// double[][] deltaBias = new double[weightLayers.size()][weightLayers.get(0).getNext()];
 
 		for (int i = weightLayers.size() - 1; i >= 0; i++) {
@@ -164,32 +164,30 @@ class Main {
 						cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 					}
 				} else {
-					double[][] cost = multiplyMatrix(transposeMatrix(weightLayers.get(i + 1).getWeights()), deltaWeights[i + 1]);
+					double[][] cost = multiplyMatrix(transposeMatrix(weightLayers.get(i + 1).getWeights()), deltas[i + 1]);
 				}
 
 				double[][] temp = multiplyMatrix(sigma, cost);
-				for (row = 0; row < deltaWeights[0].length; row++) {
-					deltaWeights[i][row][0] += temp[row][0];
+				for (row = 0; row < deltas[0].length; row++) {
+					deltas[i][row][0] += temp[row][0];
 				}
 			}
 
-			for (int col = 0; col < deltaWeights[0][0].length; col++) {
-				for (int row = 0; row < deltaWeights[0].length; row++) {
-					deltaWeights[i][row][col] *= weightLayers.get(i).getLast().getIndex(col);
-				}
-			}
+			// for (int col = 0; col < deltaWeights[0][0].length; col++) {
+			// 	for (int row = 0; row < deltaWeights[0].length; row++) {
+			// 		deltaWeights[i][row][col] *= weightLayers.get(i).getLast().getIndex(col);
+			// 	}
+			// }
 		}
 
-		for (int i = 0; i < deltaWeights.length; i++) {
-			for (int row = 0; row < deltaWeights[0].length; row++) {
-				for (int col = 0; col < deltaWeights[0][0].length; col++) {
-					deltaWeights[i][row][col] /= targets.size();
-				}
+		for (int i = 0; i < deltas.length; i++) {
+			for (int row = 0; row < deltas[0].length; row++) {
+				deltas[i][row][0] /= targets.size();
 			}
 		}
 
 		for (int i = 0; i < weightLayers.size(); i++) {
-			double[] newBias
+			double[] newBias = 
 			weightLayers.get(i).setBias(newBias);
 
 			weightLayers.get(i).setWeight(addMatrix(weightLayers.get(i).getWeights(), deltaWeights[i]));
