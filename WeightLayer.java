@@ -1,16 +1,16 @@
 class WeightLayer {
 	private double[][] weights;
 	private double[][] bias;
-	private double[][] deltasW;
-	private double[][] deltasB;
+	// private double[][] deltasW;
+	// private double[][] deltasB;
 	private HiddenLayer last;
 	private HiddenLayer next;
 	
 	public WeightLayer(HiddenLayer last, HiddenLayer next) {
 		this.weights = new double[next.getSize()][last.getSize()];
 		this.bias = new double[next.getSize()][1];
-		this.deltasW = new double[weights.length][weights[0].length];
-		this.deltasB = new double[bias.length][bias[0].length];
+		// this.deltasW = new double[weights.length][weights[0].length];
+		// this.deltasB = new double[bias.length][bias[0].length];
 		this.last = last;
 		this.next = next;
 	}
@@ -65,29 +65,29 @@ class WeightLayer {
 		bias = Main.transposeMatrix(T);
 	}
 
-	public double[][] getWeightDeltas() {
-		return deltasW;
-	}
+	// public double[][] getWeightDeltas() {
+	// 	return deltasW;
+	// }
 
-	public double[] getBiasDeltas() {
-		return Main.transposeMatrix(deltasB)[0];
-	}
+	// public double[] getBiasDeltas() {
+	// 	return Main.transposeMatrix(deltasB)[0];
+	// }
 
-	public void setWeightDelta(int input, int output, double value) {
-		deltasW[output][input] = value;
-	}
+	// public void setWeightDelta(int input, int output, double value) {
+	// 	deltasW[output][input] = value;
+	// }
 
-	public void setWeightDelta(double[][] newDelta) {
-		deltasW = newDelta;
-	}
+	// public void setWeightDelta(double[][] newDelta) {
+	// 	deltasW = newDelta;
+	// }
 
-	public void setBiasDelta(int index, double value) {
-		deltasB[index][0] = value;
-	}
+	// public void setBiasDelta(int index, double value) {
+	// 	deltasB[index][0] = value;
+	// }
 
-	public void setWeightDelta(double[][] newDelta) {
-		deltasB = newDelta;
-	}
+	// public void setWeightDelta(double[][] newDelta) {
+	// 	deltasB = newDelta;
+	// }
 
 	public void initialize() {
 		for (int i = 0; i < weights.length; i++) {
