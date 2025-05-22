@@ -187,10 +187,19 @@ class Main {
 		}
 
 		for (int i = 0; i < weightLayers.size(); i++) {
-			double[] newBias = 
-			weightLayers.get(i).setBias(newBias);
+			double[][] deltaBias = deltas[i];
+			for (int index = 0; index < deltaBias.length; index++) {
+				deltaBias[index][0] *= eta;
+			}
+			weightLayers.get(i).setBias(transposeMatrix(addMatrix(weightLayers.get(i).getAllBias(), deltaBias))[0]);
 
-			weightLayers.get(i).setWeight(addMatrix(weightLayers.get(i).getWeights(), deltaWeights[i]));
+			double[][] deltaWeights = multiplyMatrix(deltas[i], transposeMatrix(weightLayers.get(i).getLast().getAll()));
+			for (int row = 0; row < deltaWeights.lengthl row++) {
+				for (int col = 0; col < deltaWeights[0].length; col++) {
+					deltaWeights[row][col] *= eta;
+				}
+			}
+			weightLayers.get(i).setWeight(addMatrix(weightLayers.get(i).getWeights(), deltaWeights));
 		}
 	}
 
