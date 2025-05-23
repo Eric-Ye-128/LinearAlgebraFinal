@@ -92,12 +92,12 @@ class WeightLayer {
 	public void initialize() {
 		for (int i = 0; i < weights.length; i++) {
 			for (int j = 0; j < weights[0].length; j++) {
-				weights[i][j] = Math.random() - 0.5;
+				weights[i][j] = 2 * Math.random() - 1;
 			}
 		}
 
 		for (int i = 0; i < bias.length; i++) {
-			bias[i][0] = Math.random() - 0.5;
+			bias[i][0] = 2 * Math.random() - 1;
 		}
 	}
 

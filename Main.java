@@ -6,15 +6,10 @@ import java.util.*;
 
 class Main {
 	public static void main(String[] args) {
-		double eta = 0.001;
-		int epoch = 10000;
+		double eta = 0.05;
+		int epoch = 1000000;
 
 		// inputs and outputs
-		int[][] image = new int[3][3];
-		image[0] = {1, 2, 1};
-		image[1] = {2, 3, 2};
-		image[2] = {1, 2, 1};
-
 		File file = null;
 		Scanner scan = null;
 		String[] line = null;
@@ -46,19 +41,13 @@ class Main {
 			if (scan.hasNextLine()) scan.nextLine();
 		}
 
-		// System.out.println("inputs: ");
-		// for (int i = 0; i < inputs.size(); i++) System.out.println(Arrays.toString(inputs.get(i)));
-
-		// System.out.println("targets: ");
-		// for (int i = 0; i < targets.size(); i++) System.out.println(Arrays.toString(targets.get(i)));
-
-
 		double[] currInput = new double[inputs.get(0).length];
 		double[] currOutput = new double[targets.get(0).length];
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 5, hiddenSize = 5;
+		int hiddenCount = 1, hiddenSize = (int) ((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length;
+		System.out.println(hiddenSize);
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
 		}
@@ -90,41 +79,21 @@ class Main {
 			}
 
 			if (trial % (epoch / 5) == 0) {
-				System.out.println(trial);
-				for (int i = 0; i < outputs.size(); i++) {
-					System.out.println(Arrays.toString(outputs.get(i)));
-				}
-				System.out.println("\n" + loss(targets, outputs) + "\n");
+				// System.out.println(trial);
+				// for (int i = 0; i < outputs.size(); i++) {
+				// 	System.out.println(Arrays.toString(outputs.get(i)));
+				// }
+				System.out.println(loss(targets, outputs));
 			}
 
 			if (trial > 10) eta *= Math.exp(-0.1);
 			weightLayers = backpropagation(weightLayers, targets, eta);
 		}
 
-		for (int i = 0; i < outputs.size(); i++) {
-			System.out.println(Arrays.toString(outputs.get(i)));
-		}
-		System.out.println("\n" + loss(targets, outputs) + "\n");
-
-		// System.out.println("weight layers: ");
-		// for (int i = 0; i < weightLayers.size(); i++) {
-		// 	double[][] temp = weightLayers.get(i).getWeights();
-			
-		// 	for (double[] row : temp) System.out.println(Arrays.toString(row));
-		// 	System.out.println();
-
-		// 	System.out.println(Arrays.toString(weightLayers.get(i).getBias()));
-		// 	System.out.println();
+		// for (int i = 0; i < outputs.size(); i++) {
+		// 	System.out.println(Arrays.toString(outputs.get(i)));
 		// }
-
-
-
-		/*
-		System.out.println("hidden layers: ");
-		for (int i = 0; i < hiddenLayers.size(); i++) {
-			System.out.println(Arrays.toString(hiddenLayers.get(i).get()));
-		}
-		*/
+		System.out.println("\n" + loss(targets, outputs) + "\n");
 	}
 	
 	public static double[][] addMatrix(double[][] A, double[][] B) {
@@ -177,9 +146,6 @@ class Main {
 			deltas.add(new double[weightLayers.get(i).getNext().getSize()][1]);
 		}
 
-		// double[][][] deltas = new double[weightLayers.size()][weightLayers.get(0).getNext().getSize()][1];
-		// double[][] deltaBias = new double[weightLayers.size()][weightLayers.get(0).getNext()];
-
 		for (int i = weightLayers.size() - 1; i >= 0; i--) {
 			// System.out.println(i);
 
@@ -207,12 +173,6 @@ class Main {
 
 				deltas.set(i, addMatrix(deltas.get(i), multiplyMatrix(sigma, cost)));
 			}
-
-			// for (int col = 0; col < deltaWeights[0][0].length; col++) {
-			// 	for (int row = 0; row < deltaWeights[0].length; row++) {
-			// 		deltaWeights[i][row][col] *= weightLayers.get(i).getLast().getIndex(col);
-			// 	}
-			// }
 		}
 
 		for (int i = 0; i < deltas.size(); i++) {
