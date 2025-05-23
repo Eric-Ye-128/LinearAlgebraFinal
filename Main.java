@@ -6,9 +6,15 @@ import java.util.*;
 
 class Main {
 	public static void main(String[] args) {
-		double eta = 0.1;
+		double eta = 0.001;
+		int epoch = 10000;
 
 		// inputs and outputs
+		int[][] image = new int[3][3];
+		image[0] = {1, 2, 1};
+		image[1] = {2, 3, 2};
+		image[2] = {1, 2, 1};
+
 		File file = null;
 		Scanner scan = null;
 		String[] line = null;
@@ -52,7 +58,7 @@ class Main {
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 1, hiddenSize = 3;
+		int hiddenCount = 5, hiddenSize = 5;
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
 		}
@@ -69,31 +75,49 @@ class Main {
 		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initialize();
 
 		// applies weights
-		for (int i = 0; i < inputs.size(); i++) {
-			weightLayers.get(0).getLast().set(inputs.get(i));
-			for (int j = 0; j < weightLayers.size(); j++) {
-				weightLayers.get(j).applyWeights();
+		for (int trial = 0; trial < epoch; trial++) {
+			outputs.clear();
+
+			for (int i = 0; i < inputs.size(); i++) {
+				weightLayers.get(0).getLast().set(inputs.get(i));
+				for (int j = 0; j < weightLayers.size(); j++) {
+					weightLayers.get(j).applyWeights();
+				}
+				outputs.add(weightLayers.get(weightLayers.size() - 1).getNext().get());
+
+				// System.out.printf("%-15s | %-45s | %-15s\n", Arrays.toString(inputs.get(i)), 
+				// 	Arrays.toString(outputs.get(outputs.size() - 1)), Arrays.toString(targets.get(i)));
 			}
-			outputs.add(weightLayers.get(weightLayers.size() - 1).getNext().get());
 
-			System.out.printf("%-15s | %-45s | %-15s\n", Arrays.toString(inputs.get(i)), 
-				Arrays.toString(outputs.get(outputs.size() - 1)), Arrays.toString(targets.get(i)));
+			if (trial % (epoch / 5) == 0) {
+				System.out.println(trial);
+				for (int i = 0; i < outputs.size(); i++) {
+					System.out.println(Arrays.toString(outputs.get(i)));
+				}
+				System.out.println("\n" + loss(targets, outputs) + "\n");
+			}
+
+			if (trial > 10) eta *= Math.exp(-0.1);
+			weightLayers = backpropagation(weightLayers, targets, eta);
 		}
 
+		for (int i = 0; i < outputs.size(); i++) {
+			System.out.println(Arrays.toString(outputs.get(i)));
+		}
+		System.out.println("\n" + loss(targets, outputs) + "\n");
 
-		System.out.println("weight layers: ");
-		for (int i = 0; i < weightLayers.size(); i++) {
-			double[][] temp = weightLayers.get(i).getWeights();
+		// System.out.println("weight layers: ");
+		// for (int i = 0; i < weightLayers.size(); i++) {
+		// 	double[][] temp = weightLayers.get(i).getWeights();
 			
-			for (double[] row : temp) System.out.println(Arrays.toString(row));
-			System.out.println();
+		// 	for (double[] row : temp) System.out.println(Arrays.toString(row));
+		// 	System.out.println();
 
-			System.out.println(Arrays.toString(weightLayers.get(i).getBias()));
-			System.out.println();
-		}
+		// 	System.out.println(Arrays.toString(weightLayers.get(i).getBias()));
+		// 	System.out.println();
+		// }
 
 
-		System.out.println(loss(targets, outputs));
 
 		/*
 		System.out.println("hidden layers: ");
@@ -147,30 +171,41 @@ class Main {
 		return Math.exp(-x) / Math.pow(1 + Math.exp(-x), 2);
 	}
 
-	public static void updateWeights(ArrayList<WeightLayer> weightLayers, ArrayList<double[]> targets, double eta) {
-		double[][][] deltas = new double[weightLayers.size()][weightLayers.get(0).getNext().getSize()][1];
+	public static ArrayList<WeightLayer> backpropagation(ArrayList<WeightLayer> weightLayers, ArrayList<double[]> targets, double eta) {
+		ArrayList<double[][]> deltas = new ArrayList<>();
+		for (int i = 0; i < weightLayers.size(); i++) {
+			deltas.add(new double[weightLayers.get(i).getNext().getSize()][1]);
+		}
+
+		// double[][][] deltas = new double[weightLayers.size()][weightLayers.get(0).getNext().getSize()][1];
 		// double[][] deltaBias = new double[weightLayers.size()][weightLayers.get(0).getNext()];
 
-		for (int i = weightLayers.size() - 1; i >= 0; i++) {
+		for (int i = weightLayers.size() - 1; i >= 0; i--) {
+			// System.out.println(i);
+
 			double[][] sigma = new double[weightLayers.get(i).getWeights().length][weightLayers.get(i).getWeights().length];
 			for (int index = 0; index < sigma.length; index++) {
 				sigma[index][index] = activationFuncDerivative(weightLayers.get(i).getNext().getPreActivation()[index]);
 			}
 
 			for (int n = 0; n < targets.size(); n++) {
+				double[][] cost = null;
 				if (i == weightLayers.size() - 1) {
-					double[][] cost = new double[weightLayers.get(0).getWeights().length][1];
+					cost = new double[targets.get(0).length][1];
 					for (int index = 0; index < cost.length; index++) {
 						cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 					}
 				} else {
-					double[][] cost = multiplyMatrix(transposeMatrix(weightLayers.get(i + 1).getWeights()), deltas[i + 1]);
+					cost = multiplyMatrix(transposeMatrix(weightLayers.get(i + 1).getWeights()), deltas.get(i + 1));
 				}
 
-				double[][] temp = multiplyMatrix(sigma, cost);
-				for (row = 0; row < deltas[0].length; row++) {
-					deltas[i][row][0] += temp[row][0];
-				}
+				// System.out.println(Arrays.deepToString(sigma));
+				// System.out.println(Arrays.deepToString(cost));
+				
+				// System.out.println(Arrays.deepToString(multiplyMatrix(sigma, cost)));
+				// System.out.println(Arrays.deepToString(deltas.get(i)));
+
+				deltas.set(i, addMatrix(deltas.get(i), multiplyMatrix(sigma, cost)));
 			}
 
 			// for (int col = 0; col < deltaWeights[0][0].length; col++) {
@@ -180,27 +215,29 @@ class Main {
 			// }
 		}
 
-		for (int i = 0; i < deltas.length; i++) {
-			for (int row = 0; row < deltas[0].length; row++) {
-				deltas[i][row][0] /= targets.size();
+		for (int i = 0; i < deltas.size(); i++) {
+			for (int row = 0; row < deltas.get(i).length; row++) {
+				deltas.get(i)[row][0] /= targets.size();
 			}
 		}
 
 		for (int i = 0; i < weightLayers.size(); i++) {
-			double[][] deltaBias = deltas[i];
+			double[][] deltaBias = deltas.get(i);
 			for (int index = 0; index < deltaBias.length; index++) {
-				deltaBias[index][0] *= eta;
+				deltaBias[index][0] *= -eta;
 			}
 			weightLayers.get(i).setBias(transposeMatrix(addMatrix(weightLayers.get(i).getAllBias(), deltaBias))[0]);
 
-			double[][] deltaWeights = multiplyMatrix(deltas[i], transposeMatrix(weightLayers.get(i).getLast().getAll()));
-			for (int row = 0; row < deltaWeights.lengthl row++) {
+			double[][] deltaWeights = multiplyMatrix(deltas.get(i), transposeMatrix(weightLayers.get(i).getLast().getAll()));
+			for (int row = 0; row < deltaWeights.length; row++) {
 				for (int col = 0; col < deltaWeights[0].length; col++) {
-					deltaWeights[row][col] *= eta;
+					deltaWeights[row][col] *= -eta;
 				}
 			}
 			weightLayers.get(i).setWeight(addMatrix(weightLayers.get(i).getWeights(), deltaWeights));
 		}
+
+		return weightLayers;
 	}
 
 	public static double loss(ArrayList<double[]> targets, ArrayList<double[]> outputs) {
