@@ -6,8 +6,8 @@ import java.util.*;
 
 class Main {
 	public static void main(String[] args) {
-		double eta = 0.05;
-		int epoch = 1000000;
+		double eta = 0.001;
+		int epoch = 100000;
 
 		// inputs and outputs
 		File file = null;
@@ -46,7 +46,7 @@ class Main {
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 1, hiddenSize = (int) ((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length;
+		int hiddenCount = 3, hiddenSize = (int) Math.round((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length;
 		System.out.println(hiddenSize);
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
@@ -63,36 +63,35 @@ class Main {
 		// randomizing initial weights
 		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initialize();
 
-		// applies weights
+		// runs through training set
 		for (int trial = 0; trial < epoch; trial++) {
 			outputs.clear();
 
+			// feedfowards
 			for (int i = 0; i < inputs.size(); i++) {
 				weightLayers.get(0).getLast().set(inputs.get(i));
 				for (int j = 0; j < weightLayers.size(); j++) {
 					weightLayers.get(j).applyWeights();
 				}
 				outputs.add(weightLayers.get(weightLayers.size() - 1).getNext().get());
-
-				// System.out.printf("%-15s | %-45s | %-15s\n", Arrays.toString(inputs.get(i)), 
-				// 	Arrays.toString(outputs.get(outputs.size() - 1)), Arrays.toString(targets.get(i)));
 			}
 
 			if (trial % (epoch / 5) == 0) {
 				// System.out.println(trial);
-				// for (int i = 0; i < outputs.size(); i++) {
-				// 	System.out.println(Arrays.toString(outputs.get(i)));
-				// }
+				for (int i = 0; i < outputs.size(); i++) {
+					System.out.println(Arrays.toString(outputs.get(i)));
+				}
 				System.out.println(loss(targets, outputs));
 			}
-
-			if (trial > 10) eta *= Math.exp(-0.1);
+			
+			// backpropagation
+			// if (trial > 10) eta *= Math.exp(-0.5);
 			weightLayers = backpropagation(weightLayers, targets, eta);
 		}
 
-		// for (int i = 0; i < outputs.size(); i++) {
-		// 	System.out.println(Arrays.toString(outputs.get(i)));
-		// }
+		for (int i = 0; i < outputs.size(); i++) {
+			System.out.println(Arrays.toString(outputs.get(i)));
+		}
 		System.out.println("\n" + loss(targets, outputs) + "\n");
 	}
 	
@@ -147,8 +146,6 @@ class Main {
 		}
 
 		for (int i = weightLayers.size() - 1; i >= 0; i--) {
-			// System.out.println(i);
-
 			double[][] sigma = new double[weightLayers.get(i).getWeights().length][weightLayers.get(i).getWeights().length];
 			for (int index = 0; index < sigma.length; index++) {
 				sigma[index][index] = activationFuncDerivative(weightLayers.get(i).getNext().getPreActivation()[index]);
@@ -159,17 +156,12 @@ class Main {
 				if (i == weightLayers.size() - 1) {
 					cost = new double[targets.get(0).length][1];
 					for (int index = 0; index < cost.length; index++) {
+						// cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 						cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 					}
 				} else {
 					cost = multiplyMatrix(transposeMatrix(weightLayers.get(i + 1).getWeights()), deltas.get(i + 1));
 				}
-
-				// System.out.println(Arrays.deepToString(sigma));
-				// System.out.println(Arrays.deepToString(cost));
-				
-				// System.out.println(Arrays.deepToString(multiplyMatrix(sigma, cost)));
-				// System.out.println(Arrays.deepToString(deltas.get(i)));
 
 				deltas.set(i, addMatrix(deltas.get(i), multiplyMatrix(sigma, cost)));
 			}
@@ -212,8 +204,6 @@ class Main {
 			totalLoss += loss;
 		}
 
-		totalLoss /= targets.size();
-
-		return totalLoss;
+		return (totalLoss /= targets.size());
 	}
 }

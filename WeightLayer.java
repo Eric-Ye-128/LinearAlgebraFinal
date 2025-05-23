@@ -1,16 +1,14 @@
+import java.util.*;
+
 class WeightLayer {
 	private double[][] weights;
 	private double[][] bias;
-	// private double[][] deltasW;
-	// private double[][] deltasB;
 	private HiddenLayer last;
 	private HiddenLayer next;
 	
 	public WeightLayer(HiddenLayer last, HiddenLayer next) {
 		this.weights = new double[next.getSize()][last.getSize()];
 		this.bias = new double[next.getSize()][1];
-		// this.deltasW = new double[weights.length][weights[0].length];
-		// this.deltasB = new double[bias.length][bias[0].length];
 		this.last = last;
 		this.next = next;
 	}
@@ -65,39 +63,15 @@ class WeightLayer {
 		bias = Main.transposeMatrix(T);
 	}
 
-	// public double[][] getWeightDeltas() {
-	// 	return deltasW;
-	// }
-
-	// public double[] getBiasDeltas() {
-	// 	return Main.transposeMatrix(deltasB)[0];
-	// }
-
-	// public void setWeightDelta(int input, int output, double value) {
-	// 	deltasW[output][input] = value;
-	// }
-
-	// public void setWeightDelta(double[][] newDelta) {
-	// 	deltasW = newDelta;
-	// }
-
-	// public void setBiasDelta(int index, double value) {
-	// 	deltasB[index][0] = value;
-	// }
-
-	// public void setWeightDelta(double[][] newDelta) {
-	// 	deltasB = newDelta;
-	// }
-
 	public void initialize() {
 		for (int i = 0; i < weights.length; i++) {
 			for (int j = 0; j < weights[0].length; j++) {
-				weights[i][j] = 2 * Math.random() - 1;
+				weights[i][j] = gaussian() / Math.sqrt(next.getSize());
 			}
 		}
 
 		for (int i = 0; i < bias.length; i++) {
-			bias[i][0] = 2 * Math.random() - 1;
+			bias[i][0] = gaussian();
 		}
 	}
 
@@ -111,5 +85,16 @@ class WeightLayer {
 		this.next.setPreActivation(arr);
 		for (int i = 0; i < arr.length; i++) arr[i] = Main.activationFunc(arr[i]);
 		this.next.set(arr);
+	}
+
+	public double gaussian() {
+		double v1, v2, s;
+    	do {
+       		v1 = 2 * Math.random() - 1;
+       		v2 = 2 * Math.random() - 1;
+       		s = v1 * v1 + v2 * v2;
+     	} while (s >= 1 || s == 0);
+
+     	return v1 * StrictMath.sqrt(-2 * StrictMath.log(s) / s);
 	}
 }
