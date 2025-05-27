@@ -1,21 +1,64 @@
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.Color;
 import java.io.File;
-import java.io.FileWriter;
+// import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.*;
 
+// import javax.swing.ImageIcon;
+// import javax.swing.JFrame;
+// import javax.swing.JLabel;
+// import javax.swing.JPanel;
+
 class Main {
 	public static void main(String[] args) {
 		double eta = 0.001;
-		int epoch = 100000;
+		// int epoch = 100000;
+		int epoch = 0;
 
 		// inputs and outputs
+		ArrayList<int[][]> images = new ArrayList<int[][]>();
+		ArrayList<double[]> inputs = new ArrayList<double[]>();
+		ArrayList<double[]> targets = new ArrayList<double[]>();
+		ArrayList<double[]> outputs = new ArrayList<double[]>();
+
+		File folder = new File("Training set");
+		File[] listOfFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
+
+		if (listOfFiles == null || listOfFiles.length == 0) {
+			System.out.println("No training PNGs found.");
+			return;
+		}
+
+		Arrays.sort(listOfFiles, (f1, f2) -> {
+			String name1 = f1.getName().replaceAll("\\D+", "");
+			String name2 = f2.getName().replaceAll("\\D+", "");
+			int num1 = name1.isEmpty() ? 0 : Integer.parseInt(name1);
+			int num2 = name2.isEmpty() ? 0 : Integer.parseInt(name2);
+			return Integer.compare(num1, num2);
+		});
+
+		for (File file : listOfFiles) {
+			try {
+				images.add(convertGrayScale(ImageIO.read(file)));
+			} catch (Exception e) {
+				System.out.println("Error processing file " + file.getName());
+				e.printStackTrace();
+				return;
+			}
+		}
+
+		
+
 		File file = null;
 		Scanner scan = null;
 		String[] line = null;
-
+		File[] targetFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
+		
 		try {
-			file = new File("trainingSet.txt");
+			file = targetFiles[0];
 			scan = new Scanner(file);
 		} catch (Exception e) {
 			System.out.println("FIle not found");
@@ -23,30 +66,39 @@ class Main {
 			return;
 		}
 
-		ArrayList<double[]> inputs = new ArrayList<double[]>();
-		ArrayList<double[]> targets = new ArrayList<double[]>();
-		ArrayList<double[]> outputs = new ArrayList<double[]>();
-
+		String[] targetTypes = scan.nextLine().split(" ");
 		while (scan.hasNext()) {
-			line = scan.nextLine().split(" ");
-			double[] input = new double[line.length];
-			for (int i = 0; i < input.length; i++) input[i] = Double.parseDouble(line[i]);
-			inputs.add(input);
-
-			line = scan.nextLine().split(" ");
-			double[] target = new double[line.length];
-			for (int i = 0; i < target.length; i++) target[i] = Double.parseDouble(line[i]);
+			double[] target = new double[targetTypes.length];
+			String targetType = scan.nextLine();
+			for (int i = 0; i < target.length; i++) {
+				if (targetType.equals(targetTypes[i])) {
+					target[i]++;
+					break;
+				}
+			}
 			targets.add(target);
-
-			if (scan.hasNextLine()) scan.nextLine();
 		}
+
+		// while (scan.hasNext()) {
+		// 	line = scan.nextLine().split(" ");
+		// 	double[] input = new double[line.length];
+		// 	for (int i = 0; i < input.length; i++) input[i] = Double.parseDouble(line[i]);
+		// 	inputs.add(input);
+
+		// 	line = scan.nextLine().split(" ");
+		// 	double[] target = new double[line.length];
+		// 	for (int i = 0; i < target.length; i++) target[i] = Double.parseDouble(line[i]);
+		// 	targets.add(target);
+
+		// 	if (scan.hasNextLine()) scan.nextLine();
+		// }
 
 		double[] currInput = new double[inputs.get(0).length];
 		double[] currOutput = new double[targets.get(0).length];
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 3, hiddenSize = (int) Math.round((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length;
+		int hiddenCount = 3, hiddenSize = 10; /* (int) Math.round((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length; */
 		System.out.println(hiddenSize);
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
@@ -108,6 +160,7 @@ class Main {
 	}
 
 	public static double[][] multiplyMatrix(double[][] A, double[][] B) {
+		try {
 		double[][] out = new double[A.length][B[0].length];
 
 		for (int row = 0; row < out.length; row++) {
@@ -119,6 +172,11 @@ class Main {
 		}
 
 		return out;
+		} catch (Exception e) {
+			System.out.println(A.length + ", " + A[0].length);
+			System.out.println(B.length + ", " + B[0].length);
+		}
+		return null;
 	}
 
 	public static double[][] transposeMatrix(double[][] A) {
@@ -206,4 +264,45 @@ class Main {
 
 		return (totalLoss /= targets.size());
 	}
+
+	public static int[][] convertGrayScale(BufferedImage image) {
+		int[][] grayScale = new int[image.getHeight()][image.getWidth()];
+
+		for (int i = 0; i < grayScale.length; i++) {
+			for (int j = 0; j < grayScale[0].length; j++) {
+				Color color = new Color(image.getRGB(j, i));
+				grayScale[i][j] = (int) (0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue());
+			}
+		}
+
+		return grayScale;
+	}
+
+	// public static BufferedImage toImage(int[][] matrix) {
+	// 	int height = matrix.length;
+	// 	int width = matrix[0].length;
+	// 	BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+
+	// 	for (int y = 0; y < height; y++) {
+	// 		for (int x = 0; x < width; x++) {
+	// 			int value = matrix[y][x];
+	// 			int gray = new Color(value, value, value).getRGB();
+	// 			image.setRGB(x, y, gray);
+	// 		}
+	// 	}
+
+	// 	return image;
+	// }
+
+	// public static void displayImage(BufferedImage image, String title) {
+	// 	JFrame frame = new JFrame(title);
+	// 	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	// 	JLabel label = new JLabel(new ImageIcon(image));
+	// 	JPanel panel = new JPanel();
+	// 	panel.add(label);
+	// 	frame.setContentPane(panel);
+	// 	frame.pack();
+	// 	frame.setLocationRelativeTo(null);
+	// 	frame.setVisible(true);
+	// }
 }
