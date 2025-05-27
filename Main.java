@@ -2,36 +2,32 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.Color;
 import java.io.File;
-// import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.*;
 
-// import javax.swing.ImageIcon;
-// import javax.swing.JFrame;
-// import javax.swing.JLabel;
-// import javax.swing.JPanel;
-
 class Main {
 	public static void main(String[] args) {
-		double eta = 0.001;
-		// int epoch = 100000;
-		int epoch = 0;
+		double eta = 0.01;	// the learning rate
+		int epoch = 100;	// number of passes through training set
 
 		// inputs and outputs
-		ArrayList<int[][]> images = new ArrayList<int[][]>();
-		ArrayList<double[]> inputs = new ArrayList<double[]>();
-		ArrayList<double[]> targets = new ArrayList<double[]>();
-		ArrayList<double[]> outputs = new ArrayList<double[]>();
+		ArrayList<int[][]> images = new ArrayList<int[][]>();		// training set images as matrices
+		ArrayList<double[]> inputs = new ArrayList<double[]>();		// flattened training set images
+		ArrayList<double[]> targets = new ArrayList<double[]>();	// desired outputs
+		ArrayList<double[]> outputs = new ArrayList<double[]>();	// actual outputs
 
+		// obtains PNG files from Training set
 		File folder = new File("Training set");
 		File[] listOfFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
 
+		// checks if training set is empty
 		if (listOfFiles == null || listOfFiles.length == 0) {
 			System.out.println("No training PNGs found.");
 			return;
 		}
 
+		// sorts training set
 		Arrays.sort(listOfFiles, (f1, f2) -> {
 			String name1 = f1.getName().replaceAll("\\D+", "");
 			String name2 = f2.getName().replaceAll("\\D+", "");
@@ -40,6 +36,7 @@ class Main {
 			return Integer.compare(num1, num2);
 		});
 
+		// turns images to gray scale
 		for (File file : listOfFiles) {
 			try {
 				images.add(convertGrayScale(ImageIO.read(file)));
@@ -50,13 +47,14 @@ class Main {
 			}
 		}
 
-		
+		// properly formats the images to have the same size and bounded values
+		inputs = formatImages(images);
 
+		// obtains desired outputs from Training set
 		File file = null;
 		Scanner scan = null;
 		String[] line = null;
 		File[] targetFiles = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".txt"));
-		
 		try {
 			file = targetFiles[0];
 			scan = new Scanner(file);
@@ -66,56 +64,40 @@ class Main {
 			return;
 		}
 
+		// categorizes possible targets
 		String[] targetTypes = scan.nextLine().split(" ");
+		scan.nextLine();
 		while (scan.hasNext()) {
 			double[] target = new double[targetTypes.length];
 			String targetType = scan.nextLine();
 			for (int i = 0; i < target.length; i++) {
 				if (targetType.equals(targetTypes[i])) {
-					target[i]++;
+					target[i] = 1.0;
 					break;
 				}
 			}
 			targets.add(target);
 		}
-
-		// while (scan.hasNext()) {
-		// 	line = scan.nextLine().split(" ");
-		// 	double[] input = new double[line.length];
-		// 	for (int i = 0; i < input.length; i++) input[i] = Double.parseDouble(line[i]);
-		// 	inputs.add(input);
-
-		// 	line = scan.nextLine().split(" ");
-		// 	double[] target = new double[line.length];
-		// 	for (int i = 0; i < target.length; i++) target[i] = Double.parseDouble(line[i]);
-		// 	targets.add(target);
-
-		// 	if (scan.hasNextLine()) scan.nextLine();
-		// }
-
-		double[] currInput = new double[inputs.get(0).length];
-		double[] currOutput = new double[targets.get(0).length];
 		
 		// creating hidden layers
 		ArrayList<HiddenLayer> hiddenLayers = new ArrayList<HiddenLayer>();
-		int hiddenCount = 3, hiddenSize = 10; /* (int) Math.round((2.0 / 3.0) * inputs.get(0).length) + targets.get(0).length; */
-		System.out.println(hiddenSize);
+		int hiddenCount = 5, hiddenSize = 10;
 		for (int i = 0; i < hiddenCount; i++) {
 			hiddenLayers.add(new HiddenLayer(new double[hiddenSize]));
 		}
 
 		// creating weight layers
 		ArrayList<WeightLayer> weightLayers = new ArrayList<WeightLayer>();
-		weightLayers.add(new WeightLayer(new HiddenLayer(currInput), hiddenLayers.get(0)));
+		weightLayers.add(new WeightLayer(new HiddenLayer(new double[inputs.get(0).length]), hiddenLayers.get(0)));
 		for (int i = 0; i < hiddenCount - 1; i++) {
 			weightLayers.add(new WeightLayer(hiddenLayers.get(i), hiddenLayers.get(i + 1)));
 		}
-		weightLayers.add(new WeightLayer(hiddenLayers.get(hiddenLayers.size() - 1), new HiddenLayer(currOutput)));
+		weightLayers.add(new WeightLayer(hiddenLayers.get(hiddenLayers.size() - 1), new HiddenLayer(new double[targets.get(0).length])));
 
 		// randomizing initial weights
 		for (int i = 0; i < weightLayers.size(); i++) weightLayers.get(i).initialize();
 
-		// runs through training set
+		// passes through training set
 		for (int trial = 0; trial < epoch; trial++) {
 			outputs.clear();
 
@@ -128,12 +110,8 @@ class Main {
 				outputs.add(weightLayers.get(weightLayers.size() - 1).getNext().get());
 			}
 
-			if (trial % (epoch / 5) == 0) {
-				// System.out.println(trial);
-				for (int i = 0; i < outputs.size(); i++) {
-					System.out.println(Arrays.toString(outputs.get(i)));
-				}
-				System.out.println(loss(targets, outputs));
+			if ((trial + 1) % (epoch / 5) == 0) {
+				System.out.println("Error at epoch " + (trial + 1) + "/" + epoch + ": " + loss(targets, outputs));
 			}
 			
 			// backpropagation
@@ -141,10 +119,7 @@ class Main {
 			weightLayers = backpropagation(weightLayers, targets, eta);
 		}
 
-		for (int i = 0; i < outputs.size(); i++) {
-			System.out.println(Arrays.toString(outputs.get(i)));
-		}
-		System.out.println("\n" + loss(targets, outputs) + "\n");
+		System.out.println("\nFinal error: " + loss(targets, outputs) + "\n");
 	}
 	
 	public static double[][] addMatrix(double[][] A, double[][] B) {
@@ -160,7 +135,6 @@ class Main {
 	}
 
 	public static double[][] multiplyMatrix(double[][] A, double[][] B) {
-		try {
 		double[][] out = new double[A.length][B[0].length];
 
 		for (int row = 0; row < out.length; row++) {
@@ -172,11 +146,6 @@ class Main {
 		}
 
 		return out;
-		} catch (Exception e) {
-			System.out.println(A.length + ", " + A[0].length);
-			System.out.println(B.length + ", " + B[0].length);
-		}
-		return null;
 	}
 
 	public static double[][] transposeMatrix(double[][] A) {
@@ -189,6 +158,7 @@ class Main {
 		return T;
 	}
 
+	// the sigmoid function is used as the activation function
 	public static double activationFunc(double x) {
 		return (1 / (1 + Math.exp(-x)));
 	}
@@ -198,23 +168,27 @@ class Main {
 	}
 
 	public static ArrayList<WeightLayer> backpropagation(ArrayList<WeightLayer> weightLayers, ArrayList<double[]> targets, double eta) {
+		// initializes deltas
 		ArrayList<double[][]> deltas = new ArrayList<>();
 		for (int i = 0; i < weightLayers.size(); i++) {
 			deltas.add(new double[weightLayers.get(i).getNext().getSize()][1]);
 		}
 
 		for (int i = weightLayers.size() - 1; i >= 0; i--) {
+			// finds change in neuron output wrt neuron inputs
 			double[][] sigma = new double[weightLayers.get(i).getWeights().length][weightLayers.get(i).getWeights().length];
 			for (int index = 0; index < sigma.length; index++) {
 				sigma[index][index] = activationFuncDerivative(weightLayers.get(i).getNext().getPreActivation()[index]);
 			}
 
+			// finds change in error wrt neuron outputs
 			for (int n = 0; n < targets.size(); n++) {
 				double[][] cost = null;
+
+				// checks if current layer contains inner or output neurons
 				if (i == weightLayers.size() - 1) {
 					cost = new double[targets.get(0).length][1];
 					for (int index = 0; index < cost.length; index++) {
-						// cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 						cost[index][0] = weightLayers.get(i).getNext().getIndex(index) - targets.get(n)[index];
 					}
 				} else {
@@ -225,6 +199,7 @@ class Main {
 			}
 		}
 
+		// averages the deltas across entire training set
 		for (int i = 0; i < deltas.size(); i++) {
 			for (int row = 0; row < deltas.get(i).length; row++) {
 				deltas.get(i)[row][0] /= targets.size();
@@ -232,12 +207,14 @@ class Main {
 		}
 
 		for (int i = 0; i < weightLayers.size(); i++) {
+			// applies learning rate and updates biases
 			double[][] deltaBias = deltas.get(i);
 			for (int index = 0; index < deltaBias.length; index++) {
 				deltaBias[index][0] *= -eta;
 			}
 			weightLayers.get(i).setBias(transposeMatrix(addMatrix(weightLayers.get(i).getAllBias(), deltaBias))[0]);
 
+			// finds change in neuron inputs wrt weights and applies learning rate, then updates weights
 			double[][] deltaWeights = multiplyMatrix(deltas.get(i), transposeMatrix(weightLayers.get(i).getLast().getAll()));
 			for (int row = 0; row < deltaWeights.length; row++) {
 				for (int col = 0; col < deltaWeights[0].length; col++) {
@@ -250,6 +227,7 @@ class Main {
 		return weightLayers;
 	}
 
+	// the square error function is used as the loss function
 	public static double loss(ArrayList<double[]> targets, ArrayList<double[]> outputs) {
 		double totalLoss = 0.0;
 		
@@ -278,31 +256,33 @@ class Main {
 		return grayScale;
 	}
 
-	// public static BufferedImage toImage(int[][] matrix) {
-	// 	int height = matrix.length;
-	// 	int width = matrix[0].length;
-	// 	BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+	public static ArrayList<double[]> formatImages(ArrayList<int[][]> images) {
+		int maxRows = 0;
+        int maxCols = 0;
 
-	// 	for (int y = 0; y < height; y++) {
-	// 		for (int x = 0; x < width; x++) {
-	// 			int value = matrix[y][x];
-	// 			int gray = new Color(value, value, value).getRGB();
-	// 			image.setRGB(x, y, gray);
-	// 		}
-	// 	}
+		// finds largest image dimensions
+        for (int[][] image : images) {
+            maxRows = Math.max(maxRows, image.length);
+            maxCols = Math.max(maxCols, image[0].length);
+        }
 
-	// 	return image;
-	// }
+        ArrayList<double[]> out = new ArrayList<>();
+        for (int[][] image : images) {
+			// pads the edges of images with 0s
+			int[][] padded = new int[maxRows][maxCols];
+	        for (int i = 0; i < image.length; i++) {
+    	        System.arraycopy(image[i], 0, padded[(maxRows - image.length) / 2 + i], (maxCols - image[0].length) / 2, image[i].length);
+        	}
 
-	// public static void displayImage(BufferedImage image, String title) {
-	// 	JFrame frame = new JFrame(title);
-	// 	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	// 	JLabel label = new JLabel(new ImageIcon(image));
-	// 	JPanel panel = new JPanel();
-	// 	panel.add(label);
-	// 	frame.setContentPane(panel);
-	// 	frame.pack();
-	// 	frame.setLocationRelativeTo(null);
-	// 	frame.setVisible(true);
-	// }
+			// flattens the images and bounds entries to be from 0 to 1
+			double[] formatted = new double[padded.length * padded[0].length];
+			for (int i = 0; i < formatted.length; i++) {
+				formatted[i] = padded[i / padded[0].length][i % padded[0].length] /= 255.0;
+			}
+
+			out.add(formatted);
+        }
+
+        return out;
+	}
 }
